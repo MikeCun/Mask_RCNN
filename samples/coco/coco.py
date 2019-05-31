@@ -79,6 +79,15 @@ class CocoConfig(Config):
     # We use a GPU with 12GB memory, which can fit two images.
     # Adjust down if you use a smaller GPU.
     IMAGES_PER_GPU = 2
+    
+    # Number of training steps per epoch
+    STEPS_PER_EPOCH = 800
+    
+    # Learning rate and momentum
+    LEARNING_RATE = 0.002
+    
+    # Input image resizing
+    IMAGE_MAX_DIM = 512
 
     # Uncomment to train on 8 GPUs (default is 1)
     # GPU_COUNT = 8
@@ -498,8 +507,8 @@ if __name__ == '__main__':
         # Training - Stage 1
         print("Training network heads")
         model.train(dataset_train, dataset_val,
-                    learning_rate=config.LEARNING_RATE,
-                    epochs=40,
+                    learning_rate=config.LEARNING_RATE / 4,
+                    epochs=10,
                     layers='heads',
                     augmentation=augmentation)
 
@@ -507,8 +516,8 @@ if __name__ == '__main__':
         # Finetune layers from ResNet stage 4 and up
         print("Fine tune Resnet stage 4 and up")
         model.train(dataset_train, dataset_val,
-                    learning_rate=config.LEARNING_RATE,
-                    epochs=120,
+                    learning_rate=config.LEARNING_RATE + 0.001,
+                    epochs=20,
                     layers='4+',
                     augmentation=augmentation)
 
@@ -516,8 +525,8 @@ if __name__ == '__main__':
         # Fine tune all layers
         print("Fine tune all layers")
         model.train(dataset_train, dataset_val,
-                    learning_rate=config.LEARNING_RATE / 10,
-                    epochs=160,
+                    learning_rate=config.LEARNING_RATE / 2,
+                    epochs=30,
                     layers='all',
                     augmentation=augmentation)
 
