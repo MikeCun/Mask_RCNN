@@ -89,30 +89,6 @@ def compute_backbone_shapes(config, image_shape):
 #  Deep Attention Block
 ############################################################
 
-def deep_attention_block(input_x, out_dim, ratio=16,):
-    """Create a channel-wise deep attention block
-    Args:
-        input: input tensor
-        ratio: number of output filters
-    Returns: a keras tensor
-    """
-    squeeze = KL.GlobalAveragePooling2D()(input_x)
-
-    excitation = KL.Dense(out_dim // ratio, activation='relu')(squeeze)
-    excitation = KL.Activation('relu')(excitation)
-    excitation = KL.Dense(units=out_dim, activation='sigmoid')(excitation)
-    excitation = KL.Activation('sigmoid')(excitation)
-
-    excitation = KL.Reshape((1,1,out_dim))(excitation)
-    scale = KL.multiply([input_x, excitation])
-    
-    return scale
-
-
-############################################################
-#  Deep Attention Block
-############################################################
-
 def deep_attention_block(input, att_name,ratio=16):
 
     """Create a channel-wise deep attention block
@@ -181,7 +157,7 @@ def identity_block(input_tensor, kernel_size, filters, stage, block,
     x = KL.Conv2D(nb_filter3, (1, 1), name=conv_name_base + '2c',
                   use_bias=use_bias)(x)
     x = BatchNorm(name=bn_name_base + '2c')(x, training=train_bn)
-
+    x = deep_attention_block(x, conv_name_base)
     x = KL.Add()([x, input_tensor])
     x = KL.Activation('relu', name='res' + str(stage) + block + '_out')(x)
     return x
@@ -222,7 +198,7 @@ def conv_block(input_tensor, kernel_size, filters, stage, block,
     shortcut = KL.Conv2D(nb_filter3, (1, 1), strides=strides,
                          name=conv_name_base + '1', use_bias=use_bias)(input_tensor)
     shortcut = BatchNorm(name=bn_name_base + '1')(shortcut, training=train_bn)
-
+    x = deep_attention_block(x, conv_name_base)
     x = KL.Add()([x, shortcut])
     x = KL.Activation('relu', name='res' + str(stage) + block + '_out')(x)
     return x
