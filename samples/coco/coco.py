@@ -57,6 +57,9 @@ from mrcnn import model as modellib, utils
 
 # Path to trained weights file
 COCO_MODEL_PATH = os.path.join(ROOT_DIR, "mask_rcnn_coco.h5")
+# Download COCO trained weights from Releases if needed
+if not os.path.exists(COCO_MODEL_PATH):
+    utils.download_trained_weights(COCO_MODEL_PATH)
 
 # Directory to save logs and model checkpoints, if not provided
 # through the command line argument --logs
@@ -90,7 +93,7 @@ class CocoConfig(Config):
     IMAGE_MAX_DIM = 512
 
     # Uncomment to train on 8 GPUs (default is 1)
-    # GPU_COUNT = 8
+    GPU_COUNT = 2
 
     # Number of classes (including background)
     NUM_CLASSES = 1 + 80  # COCO has 80 classes
@@ -433,7 +436,7 @@ if __name__ == '__main__':
                         metavar="<image count>",
                         help='Images to use for evaluation (default=500)')
     parser.add_argument('--download', required=False,
-                        default=False,
+                        default=True,
                         metavar="<True|False>",
                         help='Automatically download and unzip MS-COCO files (default=False)',
                         type=bool)
@@ -488,8 +491,8 @@ if __name__ == '__main__':
         # validation set, as as in the Mask RCNN paper.
         dataset_train = CocoDataset()
         dataset_train.load_coco(args.dataset, "train", year=args.year, auto_download=args.download)
-#         if args.year in '2014':
-#             dataset_train.load_coco(args.dataset, "valminusminival", year=args.year, auto_download=args.download)
+        if args.year in '2014':
+            dataset_train.load_coco(args.dataset, "valminusminival", year=args.year, auto_download=args.download)
         dataset_train.prepare()
 
         # Validation dataset
@@ -504,20 +507,20 @@ if __name__ == '__main__':
 
         # *** This training schedule is an example. Update to your needs ***
 
-#         # Training - Stage 1
-#         print("Training network heads")
-#         model.train(dataset_train, dataset_val,
-#                     learning_rate=config.LEARNING_RATE / 4,
-#                     epochs=10,
-#                     layers='heads',
-#                     augmentation=augmentation)
+        # Training - Stage 1
+        print("Training network heads")
+        model.train(dataset_train, dataset_val,
+                    learning_rate=config.LEARNING_RATE,
+                    epochs=40,
+                    layers='heads',
+                    augmentation=augmentation)
 
         # Training - Stage 2
         # Finetune layers from ResNet stage 4 and up
         print("Fine tune Resnet stage 4 and up")
         model.train(dataset_train, dataset_val,
-                    learning_rate=config.LEARNING_RATE + 0.001,
-                    epochs=10,
+                    learning_rate=config.LEARNING_RATE,
+                    epochs=120,
                     layers='4+',
                     augmentation=augmentation)
 
@@ -525,8 +528,8 @@ if __name__ == '__main__':
         # Fine tune all layers
         print("Fine tune all layers")
         model.train(dataset_train, dataset_val,
-                    learning_rate=config.LEARNING_RATE / 2,
-                    epochs=20,
+                    learning_rate=config.LEARNING_RATE / 10,
+                    epochs=160,
                     layers='all',
                     augmentation=augmentation)
 
