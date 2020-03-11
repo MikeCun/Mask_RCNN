@@ -86,6 +86,66 @@ def compute_backbone_shapes(config, image_shape):
 
 
 ############################################################
+#  Deep Attention Block
+############################################################
+
+def deep_attention_block(input_x, out_dim, ratio=16,):
+    """Create a channel-wise deep attention block
+    Args:
+        input: input tensor
+        ratio: number of output filters
+    Returns: a keras tensor
+    """
+    squeeze = KL.GlobalAveragePooling2D()(input_x)
+
+    excitation = KL.Dense(out_dim // ratio, activation='relu')(squeeze)
+    excitation = KL.Activation('relu')(excitation)
+    excitation = KL.Dense(units=out_dim, activation='sigmoid')(excitation)
+    excitation = KL.Activation('sigmoid')(excitation)
+
+    excitation = KL.Reshape((1,1,out_dim))(excitation)
+    scale = KL.multiply([input_x, excitation])
+    
+    return scale
+
+
+############################################################
+#  Deep Attention Block
+############################################################
+
+def deep_attention_block(input, att_name,ratio=16):
+
+    """Create a channel-wise deep attention block
+    Args:
+        input: input tensor
+        ratio: number of output filters
+        att_name: for the training networks
+    Returns: a keras tensor
+    """
+
+    init = input
+    channel_axis = 1 if K.image_data_format() == "channels_first" else -1
+    filters = init._keras_shape[channel_axis]
+    se_shape = (1, 1, filters)
+    se = KL.GlobalAveragePooling2D(name=att_name + '_glo_info_embed')(init)
+    se = KL.Reshape(se_shape)(se)
+    se = KL.Activation('relu', name=att_name + '_ex_ac1')(se)
+    se = KL.Dropout(0.5, name=att_name + '_ex_dp1')(se)
+    se = KL.Dense(filters // ratio, activation='relu', kernel_initializer='he_normal',
+                  name=att_name + '_ex_adapt1', use_bias=False)(se)
+    se = KL.Activation('sigmoid', name=att_name + '_ex_ac2')(se)
+    se = KL.Dropout(0.5, name=att_name + '_ex_dp2')(se)
+    se = KL.Dense(filters, activation='sigmoid', kernel_initializer='he_normal',
+                  name=att_name + '_ex_adapt2', use_bias=False)(se)
+
+    if K.image_data_format() == 'channels_first':
+        se = KL.Permute((3, 1, 2))(se)
+
+    x = KL.multiply([init, se])
+
+    return x
+
+############################################################
 #  Resnet Graph
 ############################################################
 
