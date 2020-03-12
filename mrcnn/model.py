@@ -105,14 +105,14 @@ def deep_attention_block(input, att_name,ratio=16):
     se_shape = (1, 1, filters)
     se = KL.GlobalAveragePooling2D(name=att_name + '_glo_info_embed')(init)
     se = KL.Reshape(se_shape)(se)
-    se = KL.Activation('relu', name=att_name + '_ex_ac1')(se)
-    se = KL.Dropout(0.5, name=att_name + '_ex_dp1')(se)
     se = KL.Dense(filters // ratio, activation='relu', kernel_initializer='he_normal',
                   name=att_name + '_ex_adapt1', use_bias=False)(se)
-    se = KL.Activation('sigmoid', name=att_name + '_ex_ac2')(se)
-    se = KL.Dropout(0.5, name=att_name + '_ex_dp2')(se)
+    se = KL.Activation('relu', name=att_name + '_ex_ac1')(se)
+    se = KL.Dropout(0.5, name=att_name + '_ex_dp1')(se)
     se = KL.Dense(filters, activation='sigmoid', kernel_initializer='he_normal',
                   name=att_name + '_ex_adapt2', use_bias=False)(se)
+    se = KL.Activation('sigmoid', name=att_name + '_ex_ac2')(se)
+    se = KL.Dropout(0.5, name=att_name + '_ex_dp2')(se)
 
     if K.image_data_format() == 'channels_first':
         se = KL.Permute((3, 1, 2))(se)
@@ -120,6 +120,7 @@ def deep_attention_block(input, att_name,ratio=16):
     x = KL.multiply([init, se])
 
     return x
+
 
 ############################################################
 #  Resnet Graph
