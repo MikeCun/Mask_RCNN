@@ -39,8 +39,12 @@ from bs4 import BeautifulSoup as bs
 import cv2
 import imgaug
 
+import tarfile
+import urllib.request
+import shutil
+
 # Root directory of the project
-ROOT_DIR = os.path.abspath("../../")
+ROOT_DIR = os.path.abspath("./")
 # Inference result directory
 RESULTS_DIR = os.path.abspath("./inference/")
 
@@ -59,7 +63,9 @@ DEFAULT_LOGS_DIR = os.path.join(ROOT_DIR, "logs")
 DEFAULT_DATASET_YEAR = '2012'
 
 COCO_WEIGHTS_PATH = os.path.join(ROOT_DIR, "mask_rcnn_coco.h5")
-
+# Download COCO trained weights from Releases if needed
+if not os.path.exists(COCO_MODEL_PATH):
+    utils.download_trained_weights(COCO_MODEL_PATH)
 
 # VOC DATASET MASK MAP FUNCTION
 # Following codes are mapping each mask color(SegmentationClass) to ground truth index.
@@ -158,8 +164,45 @@ class VocDataset(utils.Dataset):
                                 class_mask_path=class_mask_path,
                                 object_mask_path=object_mask_path)
 
+def auto_download(self, dataDir, dataType, dataYear):
+        """Download the VOC dataset if requested.
+        dataDir: The root directory of the VOC dataset.
+        dataType: What to load (train, test) for Training or Validation
+        dataYear: What dataset year to load (2007, 2012) as a string, not an integer
+        """
 
+        # Setup paths and file names
+        if dataType == "train":
+            if dataYear == "2007":
+                imgTarFile = "VOCtrainval_06-Nov-2007.tar"
+                imgURL = "http://host.robots.ox.ac.uk/pascal/VOC/voc2007/VOCtrainval_06-Nov-2007.tar"
+            elif dataYear = "2012":
+                imgZipFile = "VOCtrainval_11-May-2012.tar"
+                imgURL = "http://host.robots.ox.ac.uk/pascal/VOC/voc2012/VOCtrainval_11-May-2012.tar"
+        
+        elif dataType == "val":
+            if dataYear == "2007":
+                imgTarFile = "VOCtest_06-Nov-2007.tar"
+                imgURL = "http://host.robots.ox.ac.uk/pascal/VOC/voc2007/VOCtest_06-Nov-2007.tar"
 
+        # Create main folder if it doesn't exist yet
+        if not os.path.exists(dataDir):
+            os.makedirs(dataDir)
+
+        # Download images if not available locally
+        if not os.path.exists(dataDir):
+            os.makedirs(dataDir)
+            print("Downloading images to " + imgTarFile + " ...")
+            with urllib.request.urlopen(imgURL) as resp, open(imgTarFile, 'wb') as out:
+                shutil.copyfileobj(resp, out)
+            print("... done downloading.")
+            print("Untarring " + imgTarFile)
+            with tarfile.open(imgTarFile) as tar_ref:
+                tar_ref.extract(dataDir)
+            tar_ref.close()
+            print("... done unzipping")
+        print("Will use images in " + dataDir)
+              
     def load_raw_mask(self, image_id, class_or_object):
         '''load two kinds of mask of VOC dataset.
         image_id: id of mask
