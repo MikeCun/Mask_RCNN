@@ -332,22 +332,19 @@ if __name__ == '__main__':
                         default=10,
                         metavar="<image count>",
                         help='Images to use for evaluation (default=10)')
-
-    # TODO
-    '''
     parser.add_argument('--download', required=False,
                         default=False,
                         metavar="<True|False>",
                         help='Automatically download and unzip PASCAL VOC files (default=False)',
                         type=bool)
-    '''
+       
     args = parser.parse_args()
     print("Command: ", args.command)
     print("Model: ", args.model)
     print("Dataset: ", args.dataset)
     print("Year: ", args.year)
     print("Logs: ", args.logs)
-    #print("Auto Download: ", args.download)
+    print("Auto Download: ", args.download)
 
 
     # Configurations
